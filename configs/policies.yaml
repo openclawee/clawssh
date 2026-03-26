@@ -1,0 +1,38 @@
+# ClawSSH Policy Rules
+# Risk levels: low, medium, high
+# - low: allow immediately
+# - medium: allow in dev/staging; need confirm in production
+# - high: always need user confirmation
+
+actions:
+  check_cpu: low
+  check_disk: low
+  check_memory: low
+  check_network: low
+  list_processes: low
+  service_status: low
+  service_control: high      # start/stop/restart services - high risk
+  tail_log: medium
+  read_file: medium
+  list_directory: low
+  ping_host: low
+  port_check: low
+  dns_lookup: low
+  uptime_info: low
+  whoami_context: low
+  env_snapshot: low
+  package_list: low
+  disk_inode_check: low
+  firewall_status: medium
+  explain_intent: low
+
+# Per-environment overrides: in Production, some actions escalate
+env_overrides:
+  production:
+    service_control: high
+    tail_log: medium
+    read_file: medium
+    firewall_status: high
+  staging:
+    service_control: medium   # staging allows with confirm, not outright deny
+    firewall_status: medium

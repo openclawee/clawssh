@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clawssh.dev/schemas/task.schema.json",
+  "title": "ClawSSHIntentTask",
+  "type": "object",
+  "required": ["action"],
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": [
+        "check_cpu",
+        "check_disk",
+        "check_memory",
+        "check_network",
+        "list_processes",
+        "service_status",
+        "service_control",
+        "tail_log",
+        "read_file",
+        "list_directory",
+        "ping_host",
+        "port_check",
+        "dns_lookup",
+        "uptime_info",
+        "whoami_context",
+        "env_snapshot",
+        "package_list",
+        "disk_inode_check",
+        "firewall_status",
+        "explain_intent"
+      ]
+    },
+    "target": {
+      "type": "string",
+      "description": "Execution target hint, e.g. local, host:port, or inventory group."
+    },
+    "source": {
+      "type": "string",
+      "description": "Adapter source route, e.g. ssh, ssh_remote, ansible, monitor."
+    },
+    "is_group": {
+      "type": "boolean",
+      "description": "Whether target refers to an inventory group."
+    },
+    "args": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Structured parameters inferred from user text (paths, service names, etc.).",
+      "additionalProperties": true
+    }
+  }
+}

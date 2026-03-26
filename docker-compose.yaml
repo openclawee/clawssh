@@ -1,0 +1,28 @@
+services:
+  clawssh:
+    build: .
+    container_name: clawssh
+    ports:
+      - "2222:2222"
+    environment:
+      # Auth: REQUIRED (choose password or authorized keys; password is simplest)
+      CLAWSSH_PASSWORD: "changeme"
+
+      # Intent engine: keyword|llm
+      CLAWSSH_INTENT_ENGINE: "llm"
+
+      # Example (MiniMax OpenAI-compatible):
+      CLAWSSH_OPENAI_BASE_URL: "https://api.minimaxi.com/v1"
+      CLAWSSH_OPENAI_MODEL: "MiniMax-M2.7"
+      OPENAI_API_KEY: "REPLACE_ME"
+
+      # Policy / environment
+      CLAWSSH_ENV: "production"
+
+      # Optional: enable post-exec one-line summaries
+      # CLAWSSH_SUMMARY_ENABLED: "1"
+
+    volumes:
+      # Persist host_key + configs + audit logs
+      - ./data:/data
+    restart: unless-stopped

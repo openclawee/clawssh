@@ -1,0 +1,11 @@
+# Local secrets and overrides
+.env
+.env.local
+*.local.env
+
+# Server host key (sensitive)
+host_key
+host_key.pub
+
+logs/
+data/

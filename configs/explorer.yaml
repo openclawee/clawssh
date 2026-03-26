@@ -1,0 +1,22 @@
+# Optional explorer probe configuration.
+# Enable with:
+#   CLAWSSH_EXPLORER_CONFIG=configs/explorer.yaml
+#
+# ENV overrides:
+# - CLAWSSH_EXPLORER_PROBES=kernel,nginx_path
+# - CLAWSSH_EXPLORER_TIMEOUT_SECONDS=5
+
+timeout_seconds: 4
+probes:
+  - key: kernel
+    command: uname
+    args: ["-a"]
+  - key: nginx_path
+    command: sh
+    args: ["-c", "command -v nginx || echo not_found"]
+  - key: docker_path
+    command: sh
+    args: ["-c", "command -v docker || echo not_found"]
+  - key: systemctl
+    command: sh
+    args: ["-c", "command -v systemctl || echo not_found"]
