@@ -95,6 +95,13 @@ Health check:
 curl -k https://127.0.0.1/healthz
 ```
 
+Production deployment templates:
+
+- systemd: `deploy/systemd/clawssh-wsproxy.service`
+- nginx (TLS termination + WSS proxy): `deploy/nginx/clawssh-wsproxy.conf`
+- caddy (automatic TLS + WSS proxy): `deploy/caddy/Caddyfile`
+- dual-DC rollout/ops guide: `docs/ops/ssh-over-tls-wsproxy.md`
+
 ### Design notes (production-focused)
 
 - Standalone process (`cmd/clawssh-wsproxy`) to keep SSH gateway untouched

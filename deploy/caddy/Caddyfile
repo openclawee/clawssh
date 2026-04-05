@@ -1,0 +1,30 @@
+:443 {
+	encode zstd gzip
+
+	# Replace with your domain. Caddy can auto-manage certs for this host.
+	# ssh.example.com {
+	#   ...
+	# }
+
+	@health path /healthz
+	handle @health {
+		reverse_proxy https://127.0.0.1:8443 {
+			transport http {
+				tls_insecure_skip_verify
+			}
+		}
+	}
+
+	@ws path /ws
+	handle @ws {
+		reverse_proxy https://127.0.0.1:8443 {
+			transport http {
+				tls_insecure_skip_verify
+			}
+		}
+	}
+
+	handle {
+		respond "not found" 404
+	}
+}
