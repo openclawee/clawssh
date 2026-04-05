@@ -63,6 +63,59 @@ docker compose up -d --build
 ssh -p 2222 operator@127.0.0.1
 ```
 
+## P2P NAT traversal (same repo, multi-command)
+
+This project now supports two access modes at the same time:
+
+- direct SSH (LAN/public IP reachable): connect as usual
+- P2P NAT traversal (no public IP): use a local tunnel command and standard SSH clients
+
+### Components
+
+- `cmd/clawssh` (existing gateway): unchanged SSH logic, plus optional side P2P node
+- `cmd/clawssh-p2p-coord`: lightweight rendezvous / coordinator service
+- `cmd/clawssh-p2p-client`: local TCP entrypoint for standard SSH tools (Termius/Xshell/OpenSSH)
+
+### Quick start
+
+1) Run coordinator (publicly reachable host):
+
+```bash
+go run ./cmd/clawssh-p2p-coord
+```
+
+2) Run gateway with optional P2P node enabled:
+
+```bash
+CLAWSSH_ADDR=:22 \
+CLAWSSH_P2P_ENABLED=1 \
+CLAWSSH_P2P_NODE_ID=gateway-1 \
+CLAWSSH_P2P_TOKEN=change-me \
+CLAWSSH_P2P_COORDINATOR_URL=http://coord.example.com:18080 \
+CLAWSSH_P2P_COORD_UDP=coord.example.com:3478 \
+go run ./cmd/clawssh
+```
+
+3) On external client machine, start local tunnel:
+
+```bash
+CLAWSSH_P2P_CLIENT_ID=laptop-1 \
+CLAWSSH_P2P_TARGET_NODE_ID=gateway-1 \
+CLAWSSH_P2P_SHARED_TOKEN=change-me \
+CLAWSSH_P2P_COORDINATOR=http://coord.example.com:18080 \
+go run ./cmd/clawssh-p2p-client
+```
+
+4) Connect with standard SSH client:
+
+```bash
+ssh -p 2222 operator@127.0.0.1
+```
+
+Notes:
+- direct SSH and P2P can run concurrently and do not interfere
+- this is a sidecar access path that forwards byte streams to local `127.0.0.1:22`
+
 ## Inventory (Ansible INI-style hosts)
 
 ClawSSH uses an Ansible-like inventory to resolve **alias/group** to real connection details.
