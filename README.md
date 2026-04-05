@@ -63,6 +63,47 @@ docker compose up -d --build
 ssh -p 2222 operator@127.0.0.1
 ```
 
+## SSH over TLS (443) via standalone WebSocket proxy
+
+For firewall traversal scenarios, this repo includes an **external** WSS proxy that does not
+change ClawSSH gateway logic. It terminates TLS on 443 and transparently forwards byte streams
+to a local SSH endpoint (default `127.0.0.1:22`).
+
+### Start proxy
+
+```bash
+go run ./cmd/clawssh-wsproxy
+```
+
+Required environment:
+
+- `CLAWSSH_WSPROXY_TLS_CERT_FILE` (PEM cert)
+- `CLAWSSH_WSPROXY_TLS_KEY_FILE` (PEM key)
+
+Common options:
+
+- `CLAWSSH_WSPROXY_ADDR=:443`
+- `CLAWSSH_WSPROXY_PATH=/ws`
+- `CLAWSSH_WSPROXY_TARGET_ADDR=127.0.0.1:22`
+- `CLAWSSH_WSPROXY_MAX_CONNS=0` (`0` means unlimited)
+- `CLAWSSH_WSPROXY_ALLOW_ORIGINS=*.example.com`
+- `CLAWSSH_WSPROXY_ALLOW_NO_ORIGIN=1` (CLI/non-browser clients often omit Origin)
+
+Health check:
+
+```bash
+curl -k https://127.0.0.1/healthz
+```
+
+### Design notes (production-focused)
+
+- Standalone process (`cmd/clawssh-wsproxy`) to keep SSH gateway untouched
+- Full-duplex streaming between WebSocket frames and raw TCP
+- TLS-only listener (`ListenAndServeTLS`) with `TLS >= 1.2`
+- Connection keepalive, ping/pong idle detection, write/read deadlines
+- Optional connection cap (`CLAWSSH_WSPROXY_MAX_CONNS`) for backpressure
+- Graceful shutdown on SIGINT/SIGTERM
+
 ## Inventory (Ansible INI-style hosts)
 
 ClawSSH uses an Ansible-like inventory to resolve **alias/group** to real connection details.

@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/gliderlabs/ssh v0.3.7
+	github.com/gorilla/websocket v1.5.3
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	golang.org/x/crypto v0.31.0
 )
