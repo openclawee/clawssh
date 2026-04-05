@@ -19,6 +19,7 @@ import (
 	"github.com/clawssh/clawssh/internal/adapter"
 	"github.com/clawssh/clawssh/internal/engine"
 	"github.com/clawssh/clawssh/internal/inventory"
+	"github.com/clawssh/clawssh/internal/p2p"
 	"github.com/clawssh/clawssh/internal/policy"
 	"github.com/clawssh/clawssh/internal/server"
 )
@@ -100,10 +101,57 @@ func main() {
 	defer stop()
 
 	log.Info("starting ClawSSH", "addr", addr)
+	if err := startOptionalP2PNode(ctx, log); err != nil {
+		log.Error("p2p node init failed", "err", err)
+		os.Exit(1)
+	}
 	if err := srv.Run(ctx); err != nil && err != context.Canceled {
 		log.Error("server exited", "err", err)
 		os.Exit(1)
 	}
+}
+
+func startOptionalP2PNode(ctx context.Context, log *slog.Logger) error {
+	if !envBoolOr("CLAWSSH_P2P_ENABLED", false) {
+		return nil
+	}
+	coord := strings.TrimSpace(os.Getenv("CLAWSSH_P2P_COORDINATOR_URL"))
+	if coord == "" {
+		coord = strings.TrimSpace(os.Getenv("CLAWSSH_P2P_COORDINATOR"))
+	}
+	if coord == "" {
+		return errors.New("CLAWSSH_P2P_COORDINATOR_URL is required when CLAWSSH_P2P_ENABLED=1")
+	}
+	nodeID := strings.TrimSpace(os.Getenv("CLAWSSH_P2P_NODE_ID"))
+	if nodeID == "" {
+		return errors.New("CLAWSSH_P2P_NODE_ID is required when CLAWSSH_P2P_ENABLED=1")
+	}
+	token := strings.TrimSpace(os.Getenv("CLAWSSH_P2P_TOKEN"))
+	if token == "" {
+		return errors.New("CLAWSSH_P2P_TOKEN is required when CLAWSSH_P2P_ENABLED=1")
+	}
+
+	cfg := p2p.NodeConfig{
+		NodeID:           nodeID,
+		NodeSecret:       token,
+		CoordHTTP:        coord,
+		CoordUDP:         envOr("CLAWSSH_P2P_COORD_UDP", ""),
+		UDPListenAddr:    envOr("CLAWSSH_P2P_UDP_ADDR", ":40000"),
+		TargetAddr:       envOr("CLAWSSH_P2P_TARGET_ADDR", "127.0.0.1:22"),
+		AnnounceInterval: durationSecondsEnvOr("CLAWSSH_P2P_ANNOUNCE_SECONDS", 15*time.Second),
+		PollInterval:     durationSecondsEnvOr("CLAWSSH_P2P_POLL_SECONDS", 2*time.Second),
+	}
+	node, err := p2p.NewNode(cfg, log.With("component", "p2p-node"))
+	if err != nil {
+		return err
+	}
+	go func() {
+		if err := node.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			log.Error("p2p node exited", "err", err)
+		}
+	}()
+	log.Info("p2p node enabled", "node_id", cfg.NodeID, "udp_addr", cfg.UDPListenAddr, "target", cfg.TargetAddr)
+	return nil
 }
 
 func splitCSVEnv(key string) []string {
@@ -132,6 +180,41 @@ func durationSecondsEnv(key string) time.Duration {
 		return 0
 	}
 	return time.Duration(n) * time.Second
+}
+
+func durationSecondsEnvOr(key string, fallback time.Duration) time.Duration {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n <= 0 {
+		return fallback
+	}
+	return time.Duration(n) * time.Second
+}
+
+func envOr(key, fallback string) string {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return fallback
+	}
+	return v
+}
+
+func envBoolOr(key string, fallback bool) bool {
+	v := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
+	if v == "" {
+		return fallback
+	}
+	switch v {
+	case "1", "true", "yes", "on":
+		return true
+	case "0", "false", "no", "off":
+		return false
+	default:
+		return fallback
+	}
 }
 
 func buildAdapterRegistry(log *slog.Logger, inv *inventory.Inventory) adapter.ToolProvider {
