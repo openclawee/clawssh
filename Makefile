@@ -1,17 +1,11 @@
-.PHONY: run run-wsproxy setup-env test build
+.PHONY: run setup-env test
 
 # Run from repo root so .env is found.
 run:
 	go run ./cmd/clawssh
 
-run-wsproxy:
-	go run ./cmd/clawssh-wsproxy
-
 test:
 	go test ./...
-
-build:
-	go build ./cmd/clawssh ./cmd/clawssh-wsproxy
 
 # One-time: copy template; then edit .env (password, API keys, etc.).
 setup-env:

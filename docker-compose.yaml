@@ -26,23 +26,3 @@ services:
       # Persist host_key + configs + audit logs
       - ./data:/data
     restart: unless-stopped
-
-  # Optional: standalone WSS(443) proxy for SSH-over-TLS tunneling.
-  # This sidecar does NOT modify ClawSSH gateway logic.
-  clawssh-wsproxy:
-    build: .
-    container_name: clawssh-wsproxy
-    command: ["/usr/local/bin/clawssh-wsproxy"]
-    network_mode: host
-    environment:
-      CLAWSSH_WSPROXY_ADDR: ":443"
-      CLAWSSH_WSPROXY_PATH: "/ws"
-      CLAWSSH_WSPROXY_TARGET_ADDR: "127.0.0.1:22"
-      CLAWSSH_WSPROXY_TLS_CERT_FILE: "/data/tls/fullchain.pem"
-      CLAWSSH_WSPROXY_TLS_KEY_FILE: "/data/tls/privkey.pem"
-      # CLAWSSH_WSPROXY_ALLOW_ORIGINS: "https://your-console.example.com"
-      # CLAWSSH_WSPROXY_MAX_CONNS: "20000"
-      # CLAWSSH_WSPROXY_ALLOW_NO_ORIGIN: "1"
-    volumes:
-      - ./data:/data
-    restart: unless-stopped
